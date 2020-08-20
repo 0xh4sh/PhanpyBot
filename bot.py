@@ -1,11 +1,11 @@
 # config: token, botID, prefix
 
-import discord, json, asyncio, random
+import discord, json, asyncio, random, os
 from discord.ext import commands
 
 
 config = json.load(open("config.json", 'r'))
-token = config["token"]
+token = os.environ.get("token")
 bot = commands.Bot(command_prefix = config["prefix"], case_insensitive = True)
 
 
@@ -14,28 +14,35 @@ async def on_ready():
     print(f"We have logged in as {bot.user.name}.")
 
 
+emotesToRoles = {
+    # emoteName: roleName
+    "DeadbyDaylight": "DbD",
+    "LeagueofLegends": "LoL",
+    "MovieNights": "MovieNights",
+    "Valorant": "Valorant",
+    "AYAYA": "AnimeNights"
+}
+
 @bot.event
 async def on_raw_reaction_add(payload):
     guild = bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
-    dbd = discord.utils.get(user.guild.roles, name = "DbD")
-    lol = discord.utils.get(user.guild.roles, name = "LoL")
-    if payload.message_id == 654298613287223307 and payload.emoji.name == "DeadbyDaylight":
-        await user.add_roles(dbd)
-    elif payload.message_id == 654298613287223307 and payload.emoji.name == "LeagueofLegends":
-        await user.add_roles(lol)
+
+    if payload.message_id == 654298613287223307:
+        if payload.emoji.name in emotesToRoles:
+            role = discord.utils.get(user.guild.roles, name = emotesToRoles[payload.emoji.name])
+            await user.add_roles(role)
 
 
 @bot.event
 async def on_raw_reaction_remove(payload):
     guild = bot.get_guild(payload.guild_id)
     user = guild.get_member(payload.user_id)
-    dbd = discord.utils.get(user.guild.roles, name = "DbD")
-    lol = discord.utils.get(user.guild.roles, name = "LoL")
-    if payload.message_id == 654298613287223307 and payload.emoji.name == "DeadbyDaylight":
-        await user.remove_roles(dbd)
-    elif payload.message_id == 654298613287223307 and payload.emoji.name == "LeagueofLegends":
-        await user.remove_roles(lol)
+
+    if payload.message_id == 654298613287223307:
+        if payload.emoji.name in emotesToRoles:
+            role = discord.utils.get(user.guild.roles, name = emotesToRoles[payload.emoji.name])
+            await user.remove_roles(role)
 
 
 @bot.command(aliases = ["commands", 'c'])
@@ -45,7 +52,7 @@ async def commandList(ctx):
 **.uwu** | `This command will return the namiuwu emote.`
 **.eightBall {question}** - *[Aliases: 8ball, 8b, 8, eb]* | `This command will return a random answer to a question.`
 **.chance** | `This command will return the probability of something in percent.`
-**.commands** | `This command will return a list of commands.`"""
+**.commands** - *[Alias: c]* | `This command will return a list of commands.`"""
 
     return await ctx.message.channel.send(message)
 
